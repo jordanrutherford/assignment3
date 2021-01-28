@@ -1,0 +1,77 @@
+---
+title: 'BIOL 432: Assignment 3'
+author: "Jordan Rutherford"
+date: "28/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+# Project Info:
+
+Date: 28/01/2021
+Github repository: https://github.com/jordanrutherford/assignment3
+Author: Jordan Rutherford
+
+```{r}
+fallopia <- read.csv("/Users/jordanrutherford/Desktop/BIOL432/assignment3/InputData/FallopiaData.csv")
+str(fallopia) #see dataset structure
+```
+
+
+```{r}
+fallopia <- fallopia %>% #redefine object
+  filter(!Total < 60) %>% #remove all rows with total < 60
+  select(Total, Taxon, Scenario, Nutrients) %>% #reorder and select specific cols
+  mutate(TotalG = (Total / 1000)) %>% #convert total biomass from mg to grams
+  select(TotalG, Taxon, Scenario, Nutrients) #replace Total with TotalG
+
+head(fallopia) #verify changes
+```
+
+## Custom Function
+
+```{r}
+FalFun <- function(var1 = 0, var2 = 0) {
+  
+  if (var2 == "Average") { 
+    print(mean(var1)) #setting average calculation type
+  } else if (var2 == "Sum") { 
+      print(sum(var1)) #setting sum calculation type
+  } else if (var2 == "Observations") { 
+      print(length(var1)) #setting observations calculation type
+  } else {
+      print("Error: Invalid Calculation Type") #error message
+    }
+}
+```
+
+## Using Fallopia dataset:
+
+```{r}
+FalFun(fallopia$Taxon, "Observations") #calculate total number of observations in the Taxon column
+```
+
+```{r}
+FalFun(subset(fallopia$TotalG, fallopia$Nutrients == "low"), "Average") #average TotalG for low nutrient group
+```
+
+```{r}
+FalFun(subset(fallopia$TotalG, fallopia$Nutrients == "high"), "Average") #average TotalG for high nutrient group
+```
+
+Save cleaned data to new .csv file:
+
+```{r}
+#I don't want to reset my working directory so I'm using a method where I specify my "out" path as an object
+out_path = "/Users/jordanrutherford/Desktop/BIOL432/assignment3/Output/" #out path
+fileName = paste(out_path, 'WrangledData.csv',sep = '') #create file name parameters
+write.csv(fallopia,fileName) #write file to output folder
+```
+
+
+
+

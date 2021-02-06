@@ -1,0 +1,48 @@
+---
+title: "Regex"
+author: "Jordan Rutherford"
+date: "05/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+Read measurements.csv file from Assignment 1:
+
+```{r}
+MData <- read.csv("/Users/jordanrutherford/Desktop/BIOL432/measurements.csv")
+MData
+```
+
+
+```{r}
+MData <- MData %>%
+  mutate(Sp = gsub("([A-Z]).* (.*)", "\\1. \\2", MData$Organism)) %>%
+  select(Sp, Limb.width, Limb.length, Observer)
+```
+
+
+```{r}
+write.csv(MData, "MeasShort.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

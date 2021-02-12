@@ -1,0 +1,153 @@
+---
+title: 'Tutorial 5: DNA Barcoding'
+author: "Jordan Rutherford"
+date: "09/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(BiocManager)
+install(c("sangerseqR","annotate")) 
+```
+
+```{r}
+SeqStats <- read.csv("/Users/jordanrutherford/Desktop/BIOL432/assignment3/Data/DNA_Barcoding/BarcodePlateStats.csv")
+str(SeqStats)
+```
+
+```{r}
+library(sangerseqR)
+```
+
+```{r}
+ITS <- read.abif("./Data/DNA_Barcoding/1Ipos_F_P1815443_064.ab1")
+ITSseq <- sangerseq(ITS) #convert ab1 file to sangerseq object
+str(ITSseq)
+```
+
+This is a class file. You can use @ signs to denote different elements of the text like $.
+
+```{r}
+ITSseq@primarySeqID
+```
+
+```{r}
+ITSseq@primarySeq
+```
+
+```{r}
+chromatogram(ITSseq, width = 250, height = 2, showcalls = "both") #graph the trace
+```
+
+## BLAST
+
+You can use the trim5 and trim3 parameters to trim the unsequenced base pairs. We can use it with the width parameter to ‘zoom in’. Let’s look closer at the early part of the sequence:
+
+```{r}
+chromatogram(ITSseq, width = 50, height = 2, trim3=1100, showcalls = "both")
+```
+
+Try with a "messy" sequence:
+
+```{r}
+ITS2 <- read.abif("./Data/DNA_Barcoding/1I2_F_P1815443_048.ab1")
+ITSSeq2 <- sangerseq(ITS2)
+chromatogram(ITSSeq2, width = 50, height = 2, trim3=1100, showcalls = "both")
+```
+
+Play around with the parameters until you have a good sequence. You may want to use the filename="graph.pdf"calcac parameter to save the graph to a pdf file that makes it easier to zoom in and inspect the graph.
+
+A quick and easy method is to use the MakeBaseCalls() functions to ‘call’ the base pairs based on the strongest signals. This cuts out all the ambiguous peaks that probably represent noise in the fluoresence detectors.
+
+```{r}
+SeqX<-makeBaseCalls(ITSseq)
+print(SeqX)
+```
+
+## BLASTn
+
+We are using genes with fairly low mutation rates, so BLASTn is appropriate for finding a species-level match. The annotate package from Bioconductor has some tools for conducting a BLAST search in R.
+
+```{r}
+library(annotate)
+```
+
+If we wanted to automate the process, we should create a script that works for one sequence, then put it into a for loop to iterate through multiple sequences. First, pull together all of the lines of code that we need to get to the sequence and put them together in one place:
+
+```{r}
+ITS<-read.abif("./Data/DNA_Barcoding/1Ipos_F_P1815443_064.ab1") # Read
+ITSseq <- sangerseq(ITS) # Extract
+SeqX<-makeBaseCalls(ITSseq) # Call
+```
+
+At this point, we have a string, but it’s not yet the right format for the BLAST search. We have to get it down to a single sequence in FASTA format. Looking at the structure of the SeqX S4 class:
+
+```{r}
+str(SeqX)
+```
+
+```{r}
+SeqX@primarySeq #get primary sequence
+```
+
+```{r}
+ITSseq@primarySeq #compare with original "raw" sequence
+```
+
+Now we just pass the ‘trimmed’ sequence to our BLAST function. It will take a few seconds to run in the online database. It may seem like a long time, but think about what is happening here. Your sequence is uploaded to the BLAST interface, where it is then compared to several millions to billions of sequences.
+
+```{r}
+SeqXBlastDF<-blastSequences(paste(SeqX@primarySeq),as='data.frame')
+```
+
+Looking at the number of rows and the headings gives shows a lot of detail in the BLAST results:
+
+```{r}
+nrow(SeqXBlastDF)
+```
+
+```{r}
+head(SeqXBlastDF)
+```
+The object is the first 10 sequences that matched our ‘query’ sequence. Some of the key parameters are outlined on the BLAST glossary. The main columns are:
+
+Hit_accession – The accession code for each match
+Hit_len – The length of the matching sequence, in number of base pairs
+Hit_def – The name of the accession matching our query sequence
+Hsp_score – A score representing the strength of the match. HSP stands for ‘High-scoring Segment Pair’. The details of how the score is calculated are a bit complicated, but the key is that the higher number represents a stronger match.
+Hsp_evalue – An e-value is another way to measure the strength of the hit. It represents the probability of getting a match just by chance alone. Therefore smaller values generally indicate stronger matches.
+Hsp_gaps – The number of gaps between the query sequence and its match.
+Hsp_qseq – The query sequence (same for each hit)
+Hsp_hseq – The ‘hit’ sequence
+Inspecting the scores and evalues shows that all 10 hits are good matches. We may want to consider increasing the number of hits to retain by modifying parameters in the blastSequences() function.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
